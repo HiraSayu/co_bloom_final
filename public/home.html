@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="styleforhome.css">
+        <link rel="icon" href="co_flower15k.PNG">
+        <title>ホーム：進捗確認</title>
+
+        <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-firestore.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
+    </head>
+    <body>
+        <div id="head">
+            <h1>CO BLOOM</h1>
+            <ul class="menu-list">
+                <li><a href="#">Home</a></li>
+                <li><a href="userInfo.html">mypage</a></li>
+                <li><a href="https://65e850889aa191083fe3f3ee--funny-kashata-b5973c.netlify.app/" target="_blank">chat</a></li>
+                <li><a href="registProg.html">Register Progress</a></li>
+                <li><a href="registInit.html">Register seminer</a></li>
+                <li><a id="logout">Logout</a></li>
+              </ul>
+        </div>
+        <h1>進捗の確認</h1>
+
+        <div class="userdata">
+            <div class="usercard" id="user1">
+                <label for="profileImageInput">
+                    <img class="profilePicture" id="Pict1" src="" alt="Profile Picture">
+                </label>
+                <p>username:<span id="user1nameValue"></span></p>
+                <p>progress:<span class="progress" id="user1proValue">nodata</span></p>
+               
+            </div>
+
+            <div class="usercard" id="user2">
+                <label for="profileImageInput">
+                    <img class="profilePicture" id="Pict2" src="" alt="Profile Picture">
+                </label>
+                <p>username:<span id="user2nameValue"></span></p>
+                <p>progress:<span class="progress" id="user2proValue">nodata</span></p>
+               
+            </div>
+
+            <div class="usercard" id="user3">
+                <label for="profileImageInput">
+                    <img class="profilePicture" id="Pict3" src="" alt="Profile Picture">
+                </label>
+                <p>username:<span id="user3nameValue"></span></p>
+                <p>progress:<span class="progress" id="user3proValue">nodata</span></p>
+            
+            </div>
+
+            <div class="usercard" id="user4">
+                <label for="profileImageInput">
+                    <img class="profilePicture" id="Pict4" src="" alt="Profile Picture">
+                </label>
+                <p>username:<span id="user4nameValue"></span></p>
+                <p>progress:<span class="progress" id="user4proValue">nodata</span></p>
+             
+            </div>
+        </div>
+        <div id="flower">
+            <div id="floText">
+                <p>花の成長</p>
+                <p id="flowerGrowText"><span id="flowerGrow"></span>%</p>
+            </div>
+            <div id="floImageContainer">
+                <img src="" alt="Image" style="display: flex; 
+                
+                text-align: left;
+                aspect-ratio: 1/1;
+                max-width: 400px; 
+                height: auto;">
+            </div>
+        </div>
+       
+
+    </body>
+    
+    <script>
+        
+        const firebaseConfig = {
+    apiKey: "AIzaSyBjXAR91AtyS_vS10Sdl47_cvHetrvYI6U",
+    authDomain: "co-bloom.firebaseapp.com",
+    databaseURL: "https://co-bloom-default-rtdb.firebaseio.com",
+    projectId: "co-bloom",
+    storageBucket: "co-bloom.appspot.com",
+    messagingSenderId: "400310248137",
+    appId: "1:400310248137:web:042dcd6eb93aa25384a318"
+  };
+    
+
+    // Initialize Firebase
+
+    
+    firebase.initializeApp(firebaseConfig);
+
+    //↑firebase初期化
+
+    const db = firebase.firestore();
+
+    //↓前回までの数字を入れておく
+    
+    //pro1の進捗計算処理
+    //const progress1 = document.getElementById("pro1").value;
+
+    
+    firebase.auth().onAuthStateChanged(user => {
+        let thisSeminer;
+            if (user) {
+                // ユーザーが認証されている場合、Firestoreからユーザーデータを取得
+
+                db.collection("profiles").doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        if(!userData.semi){
+                            window.location.href = "registInit.html";
+                        }else{
+                        thisSeminer = userData.semi;
+                        }
+                        let goal;
+
+                        db.collection('seminers').doc(thisSeminer).get().then(semDoc => {
+                        if (semDoc.exists) {
+                            const semData = semDoc.data();
+                            goal = semData.bookPages;
+
+                            if (goal === null) {
+                                console.log("fail");
+                            } else {
+                                console.log(goal);
+                            }
+                        } else {
+                            console.log("Seminer document does not exist!");
+                        }
+                        }).catch(error => {
+                            console.log("Error getting seminer document:", error);
+                        });
+                        const collectionRef = db.collection('seminers').doc(thisSeminer).collection('members');
+                        
+                        collectionRef.get()
+                        .then((querySnapshot) => {
+                            const membersData = {}; // メンバーデータを格納するオブジェクト
+
+                            querySnapshot.forEach((doc) => {
+                            if (doc.exists) {
+                                // uidをキーとして、メンバーデータをオブジェクトに格納
+                                membersData[doc.id] = doc.data();
+                            } else {
+                                console.log("No such document!");
+                            }
+                            });
+
+                        // 格納したメンバーデータを出力する
+                        console.log("Members Data:", membersData);
+
+                        //進捗：読み進めたページ*100/担当ページ数
+                        /*
+                        const pro1 = Math.round((membersData["mem1"].end-membersData["mem1"].read)*100/(membersData["mem1"].end-membersData["mem1"].start));
+                        document.getElementById("user1proValue").innerHTML = `${pro1}%`;
+                        */
+
+                        //k：全員の読み進めたページ数の合計
+                        let k = 0;
+                        //このfor文の中で、進捗の計算と表示を行う
+                        for(let i = 1;i<5;i++){
+                            let tempName = "mem"+i;
+
+                            let readData = membersData[tempName].read-membersData[tempName].start;
+                            if(readData<=0){
+                                readData = 0;
+                            }
+                            console.log(readData);
+
+                            k = k+readData;
+                            //進捗の％の計算
+                            let tempValue = Math.round((readData)*100/(membersData[tempName].end-membersData[tempName].start));
+                            //HTML内の進捗表示用タグの値
+                            let tempHTMLProValue = "user" + i + "proValue";
+                            //HTML内のユーザ名表示用タグの値
+                            let tempHTMLNameValue = "user" + i + "nameValue";
+                           
+                            document.getElementById(tempHTMLProValue).innerHTML = `${tempValue}%`;
+                            document.getElementById(tempHTMLNameValue).innerHTML = membersData[tempName].name;
+
+                            let idForpictSRC = membersData[tempName].id;
+
+                            db.collection('profiles').doc(idForpictSRC)
+                            .get().then((doc) => {
+                                let tempPicValue = "Pict" + i;
+                                document.getElementById(tempPicValue).src = doc.data().profilePicture;
+                            }).catch((error) => {
+                                console.log("Error getting pic:", error);
+                            });
+
+                           
+                        }
+                        /*
+                        let tempPicValue = "Pict" + i;
+                        document.getElementById(tempPicValue).src = membersData[tempName].profilePicture;
+                        */
+
+                        let AllProgress = k;
+                        
+                        if(k==0){
+                            AllProgress = 0
+                        ;}else{
+                            AllProgress =  Math.round(k*100/goal);
+                        }
+
+                        //全員の読み進めたページ数/全体のページ数
+                        if(k>=goal){
+                            document.getElementById("flowerGrow").innerHTML = 100;
+                        }else{
+                        document.getElementById("flowerGrow").innerHTML = AllProgress;
+                        }
+
+                        let imagePath = "";
+
+                        if(AllProgress<=20){
+                            imagePath = "https://firebasestorage.googleapis.com/v0/b/test223-c5e18.appspot.com/o/siteImg%2Fflo_01.PNG?alt=media&token=2f8e59ff-38b5-490d-aac2-699f32403d6a";
+                        }else if(AllProgress<=40){
+                            imagePath = "https://firebasestorage.googleapis.com/v0/b/test223-c5e18.appspot.com/o/siteImg%2Fflo_02.PNG?alt=media&token=b2faac68-b6c5-4abe-b863-4b207cb503b5";
+                        }else if(AllProgress<=60){
+                            imagePath = "https://firebasestorage.googleapis.com/v0/b/test223-c5e18.appspot.com/o/siteImg%2Fflo_03.PNG?alt=media&token=adb59f05-ddad-4acf-829b-a7dae21dd526";
+                        }else if(AllProgress <= 80){
+                            imagePath = "https://firebasestorage.googleapis.com/v0/b/test223-c5e18.appspot.com/o/siteImg%2Fflo_04.PNG?alt=media&token=626c387b-b742-4af9-b625-3af01684cc83";
+                        }else{
+                            imagePath = "https://firebasestorage.googleapis.com/v0/b/test223-c5e18.appspot.com/o/siteImg%2Fflo_05.PNG?alt=media&token=43bb8001-8b30-42cb-b098-8766eadd78d1";
+                        }
+
+                        // 画像を表示する要素を取得
+                        let imageElement = document.querySelector("#floImageContainer img");
+
+                        // 画像のパスを設定して表示
+                        imageElement.src = imagePath;
+                        
+                    })
+                    .catch((error) => {
+                        console.log("Error getting documents:", error);
+                    });
+                    
+    
+                    } else {
+                        console.log("No such document!");
+                        
+                    }
+                }).catch(error => {
+                    console.log("Error getting document:", error);
+                });
+            } 
+
+            
+    
+
+    });
+
+    // ログアウト処理
+    document.getElementById('logout').addEventListener('click', function(event) {
+            event.preventDefault();
+            firebase.auth().signOut().then(() => {
+                console.log('User signed out.');
+                window.location.href = 'login.html';
+            }).catch((error) => {
+                console.error('Sign Out Error', error);
+            });
+        });
+    
+    </script>
+</html>

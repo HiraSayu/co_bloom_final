@@ -1,0 +1,9 @@
+[
+    {
+      "origin": ["haa991036"],
+      "methods": ["GET", "POST"],
+      "responseHeaders": ["Content-Type"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+  

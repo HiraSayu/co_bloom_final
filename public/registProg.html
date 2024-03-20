@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="style.css">
+        <title>進捗データの登録</title>
+
+        <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-firestore.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
+    </head>
+    <body>
+        <div id="head">
+            <h1>CO BLOOM</h1>
+            <ul class="menu-list">
+                <li><a href="home.html">Home</a></li>
+                <li><a href="userInfo.html">mypage</a></li>
+                <li><a href="https://65e850889aa191083fe3f3ee--funny-kashata-b5973c.netlify.app/" target="_blank">chat</a></li>
+                <li><a href="registProg.html">Register Progress</a></li>
+                <li><a id="logout">Logout</a></li>
+              </ul>
+        </div>
+
+        <div class="center">
+            <h1>進捗報告</h1>
+            <h2>担当ページ：<span id="myPageToRead"></span></h2>
+            
+            <div class="inputcon">
+                <h3 class="inputDescription">名前</h3>
+                <input type="text" id="names" placeholder="入力内容をここに入力してください"
+                class = "textbox">
+                
+            </div>
+            <h2>終わらせたタスク</h2>
+            <div class="inputcon">
+                <h3 class="inputDescription">担当箇所の理解</h3>
+                <input type="number" id="readData" placeholder="入力内容をここに入力してください"
+                class = "textbox">
+                <p>ページまで</p>
+            </div>
+
+            <div class="inputcon">
+                <h3 class="inputDescription">内容の要約</h3>
+                <input type="number" id="sumData" placeholder="入力内容をここに入力してください"
+            class = "textbox">
+            <p>ページまで</p>
+            </div>
+
+            <div class="inputcon">
+                <h3 class="inputDescription">発表準備</h3>
+                <input type="number" id="presenData" placeholder="入力内容をここに入力してください"
+            class = "textbox">
+            <p>ページまで</p>
+            </div>
+
+            <button id="submitButton">送信</button>
+            <h2 id = "result"></h2>
+        </div>
+    </body>
+    
+    <script>
+        
+        const firebaseConfig = {
+    apiKey: "AIzaSyBjXAR91AtyS_vS10Sdl47_cvHetrvYI6U",
+    authDomain: "co-bloom.firebaseapp.com",
+    databaseURL: "https://co-bloom-default-rtdb.firebaseio.com",
+    projectId: "co-bloom",
+    storageBucket: "co-bloom.appspot.com",
+    messagingSenderId: "400310248137",
+    appId: "1:400310248137:web:042dcd6eb93aa25384a318"
+  };
+    
+
+    // Initialize Firebase
+
+    
+    firebase.initializeApp(firebaseConfig);
+
+    //↑firebase初期化
+
+    const db = firebase.firestore();
+
+    //↓前回までの数字を入れておく
+    //document.getElementById("inputData").value = 10;
+
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+                // ユーザーが認証されている場合、Firestoreからユーザーデータを取得
+            db.collection("profiles").doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        const memID = userData.memID;
+                        const joinSemi = userData.semi;
+        
+                        var ColRef = db.collection("seminers").doc(joinSemi).collection("members");
+                        const docRef = ColRef.doc(memID); 
+
+                        docRef.get().then((doc) => {
+                            if (doc.exists) {
+                                //前回までの進捗を表示
+                                console.log("Document data:", doc.data());
+                                document.getElementById("readData").value = doc.data().read;
+
+                                document.getElementById("myPageToRead").innerHTML = `${doc.data().start}~${doc.data().end}`;
+
+                            } else {
+                                // doc.data() will be undefined in this case
+                                console.log("No such document!");
+                            }
+                        }).catch((error) => {
+                            console.log("Error getting document:", error);
+                        });
+
+                        
+                        document.querySelector('#submitButton').addEventListener('click', function() {
+
+                            let nameIn = document.getElementById("names").value;
+                            let readInput = Number(document.getElementById("readData").value);
+                            let sumInput = Number(document.getElementById("sumData").value);
+                            let presenInput = Number(document.getElementById("presenData").value);
+
+                            if(readInput==null || sumInput == null || presenInput == null){
+                                document.getElementById('result').innerHTML = "値を入力してください";
+                            }else{
+                                //var stu = db.collection('sampleMember').doc(nameIn);
+                                return docRef.update({
+                                    //presen:presenInput
+                                    read:readInput,
+                                    //sum:sumInput
+                                })
+                                .then(() => {
+                                    console.log("Document successfully updated!");
+                                    document.getElementById('result').innerHTML = "登録完了！";
+                                    window.location.href = "home.html";
+                                })
+                                .catch((error) => {
+                                    // The document probably doesn't exist.
+                                    console.error("Error updating document: ", error);
+                                });
+                            }
+                            });
+                            
+                    } else {
+                        console.log("No such document!");
+                        alert("ユーザ認証に失敗しました。もう一度ログインしてください。");
+                        window.location.href = "login.html";
+                    }
+            }).catch(error => {
+                    console.log("Error getting document:", error);
+            });
+        } else {
+                // ユーザーが認証されていない場合
+                console.log("No user is signed in.");
+                // ここでログインページへリダイレクトするなどの処理を行う
+        }
+    });
+
+    // ログアウト処理
+    document.getElementById('logout').addEventListener('click', function(event) {
+            event.preventDefault();
+            firebase.auth().signOut().then(() => {
+                console.log('User signed out.');
+                window.location.href = 'login.html';
+            }).catch((error) => {
+                console.error('Sign Out Error', error);
+            });
+        });
+
+        
+       
+    </script>
+</html>
